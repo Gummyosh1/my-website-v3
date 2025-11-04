@@ -1,64 +1,115 @@
 const cards = document.querySelectorAll(".card");
 const overlay = document.getElementById("overlay");
-const bench = document.getElementById("bench");
+const board = document.getElementById("board");
 
 cards.forEach((card) => {
   card.addEventListener("click", () => {
-    const startRect = card.getBoundingClientRect();
-    const scale = 1.6;
+    // prevent double-zooming
+    if (card.classList.contains("zoomed")) return;
 
-    // Create a shell that we will scale like a bitmap
-    const shell = document.createElement("div");
-    shell.className = "zoom-shell";
-    Object.assign(shell.style, {
-      top: `${startRect.top}px`,
-      left: `${startRect.left}px`,
-      width: `${startRect.width}px`,
-      height: `${startRect.height}px`,
-      boxShadow: "0 0 0 rgba(0,0,0,0)",
-    });
+    // Capture position & size
+    const rect = card.getBoundingClientRect();
 
-    // Clone the card inside; disable hover on the clone
-    const clone = card.cloneNode(true);
-    clone.classList.add("no-hover");
-    shell.appendChild(clone);
-    document.body.appendChild(shell);
+    // Placeholder to preserve layout
+    const placeholder = document.createElement("div");
+    placeholder.style.width = `${rect.width}px`;
+    placeholder.style.height = `${rect.height}px`;
+    placeholder.style.flexShrink = "0";
+    card.parentNode.insertBefore(placeholder, card);
 
-    // Hide real card + show overlay
-    card.classList.add("hidden-card");
+    // Remember original location
+    const originalParent = card.parentNode;
+    const originalNextSibling = card.nextSibling;
+
+    // Move card to body for zoom animation
+    document.body.appendChild(card);
+
+    // Prepare card for fixed positioning
+    card.style.position = "fixed";
+    card.style.top = `${rect.top}px`;
+    card.style.left = `${rect.left}px`;
+    card.style.width = `${rect.width}px`;
+    card.style.height = `${rect.height}px`;
+    card.style.margin = "0";
+    card.style.zIndex = "1001";
+    card.style.transformOrigin = "top left";
+    card.style.transition = "all 0.6s cubic-bezier(0.4,0,0.2,1)";
+    card.style.transform = "scale(1)";
+
+    card.classList.add("zoomed");
+
+    // Show overlay
     overlay.classList.add("visible");
-    bench.classList.add("blurred");
+    board.classList.add("blurred");
 
-    // ---- EXPAND (centered) ----
-    requestAnimationFrame(() => {
-      shell.style.top = "50%";
-      shell.style.left = "50%";
-      shell.style.transform = `translate(-50%, -50%) scale(${scale})`;
-      shell.style.boxShadow = "0 0 40px rgba(0,0,0,0.8)";
-    });
+    // Force reflow
+    void card.offsetWidth;
 
-    // ---- COLLAPSE ----
-    overlay.onclick = () => {
+    // Calculate centered translation
+    const scale = 1.7;
+    const scaledWidth = rect.width * scale;
+    const scaledHeight = rect.height * scale;
+    const viewportCenterX = window.innerWidth / 2;
+    const viewportCenterY = window.innerHeight / 2;
+
+    const centeredLeft = viewportCenterX - scaledWidth / 2;
+    const centeredTop = viewportCenterY - scaledHeight / 2;
+
+    const translateX = centeredLeft - rect.left;
+    const translateY = centeredTop - rect.top;
+
+    // Animate zoom
+    card.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    card.style.boxShadow = "0 0 40px rgba(0,0,0,0.8)";
+
+    // --- Define handler function ---
+    const collapseHandler = () => {
+      // remove listener immediately so we don't stack
+      overlay.removeEventListener("click", collapseHandler);
+
       overlay.classList.remove("visible");
-      bench.classList.remove("blurred");
+      board.classList.remove("blurred");
 
-      // Move shell back to exact start box; scale back to 1
-      shell.style.top = `${startRect.top}px`;
-      shell.style.left = `${startRect.left}px`;
-      shell.style.transform = "none";
-      shell.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
+      // Animate back
+      card.style.top = `${rect.top}px`;
+      card.style.left = `${rect.left}px`;
+      card.style.transform = "scale(1)";
+      card.style.boxShadow = "0 5px 12px rgba(0,0,0,0.3)";
 
-      shell.addEventListener(
-        "transitionend",
-        () => {
-          // One paint to guarantee final alignment, then restore original
-          shell.style.transition = "none";
-          void shell.offsetHeight;
-          shell.remove();
-          card.classList.remove("hidden-card");
-        },
-        { once: true }
-      );
+      const handleTransitionEnd = (e) => {
+        if (e.target !== card) return;
+
+        card.removeEventListener("transitionend", handleTransitionEnd);
+
+        // Restore to original layout
+        if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+          originalParent.insertBefore(card, originalNextSibling);
+        } else {
+          originalParent.appendChild(card);
+        }
+
+        placeholder.remove();
+
+        // Reset styles
+        card.style.position = "";
+        card.style.top = "";
+        card.style.left = "";
+        card.style.width = "";
+        card.style.height = "";
+        card.style.margin = "";
+        card.style.zIndex = "";
+        card.style.transformOrigin = "";
+        card.style.transition = "";
+        card.style.transform = "";
+        card.style.boxShadow = "";
+
+        card.classList.remove("zoomed");
+      };
+
+      card.addEventListener("transitionend", handleTransitionEnd, { once: true });
     };
+
+    // --- Attach listener each time we zoom a card ---
+    overlay.addEventListener("click", collapseHandler);
   });
 });

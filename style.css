@@ -20,7 +20,7 @@ body {
 .board {
   position: relative;
   border-radius: 24px;
-  padding: 50px 30px 80px 30px;
+  padding: 30px 30px 60px 30px;
   width: 90%;
   max-width: 1200px;
   max-height: 85vh;
@@ -29,39 +29,75 @@ body {
   align-items: center;
   background: url("background/playmat.png") center center / cover no-repeat;
   background-color: #2b5876;
-  box-shadow: 0 0 60px rgba(0,0,0,0.8);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
   backdrop-filter: blur(3px) brightness(1.05);
-  margin: 40px 0;
+  margin: 20px 0;
 }
 
 /* --------------------------
-   BIO CARD
+   BIO CARD SECTION
 --------------------------- */
 .bio-section {
   display: flex;
   justify-content: center;
-  margin-bottom: 40px;
+  align-items: center;
+  margin-bottom: 30px;
+  position: relative;
+  min-height: 255px; /* matches card height */
+  flex-shrink: 0;
 }
 
-.bio-card {
-  transform: scale(1.1);
+
+.bio-section .bio-card {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate3d(-50%, 0, 0); /* use 3D to lock rasterization */
   transform-origin: center top;
   cursor: pointer;
-  transition: transform 0.3s ease;
+  width: 170px;
+  height: 255px;
+  transition: none;
+  will-change: transform;
 }
 
-.bio-card:hover {
-  transform: scale(1.15);
+/* completely freeze on hover */
+.bio-section .bio-card:hover {
+  transform: translate3d(-50%, 0, 0);
 }
+
 
 /* --------------------------
-   BENCH
+   CARD SLOTS ROW
 --------------------------- */
-.bench {
+.card-slots {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  flex-direction: row;
   justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  margin-top: 0;
+  width: 100%;
+  flex-wrap: nowrap;
+}
+
+.card-slot {
+  width: 180px;
+  height: 260px;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+  transition: none;
+}
+
+/* Hover does nothing */
+.card-slot:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: none;
 }
 
 /* --------------------------
@@ -73,22 +109,25 @@ body {
   background: linear-gradient(180deg, #fdf6e3, #f4e1b2);
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
   border: 3px solid #d4af37;
-  transition: transform 0.2s ease;
-  padding-bottom: 18px; /* bottom gold bar space */
+  padding-bottom: 18px;
   backface-visibility: hidden;
   transform-origin: center center;
-}
-
-.card:hover {
-  transform: scale(1.07);
   z-index: 10;
+  transition: none;
 }
 
-/* fixed bottom gold bar */
+/* Hover does nothing */
+.card:hover {
+  transform: none;
+  z-index: 10;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Fixed bottom gold bar */
 .card::after {
   content: "";
   position: absolute;
@@ -111,16 +150,23 @@ body {
   font-size: 14px;
   color: #222;
   border-bottom: 2px solid #d4af37;
-  background: linear-gradient(100deg, #f7d46c 0%, #f7d46c 71%, black 72%, #f0b429 73%, #f0b429 100%);
+  background: linear-gradient(
+    100deg,
+    #f7d46c 0%,
+    #f7d46c 71%,
+    black 72%,
+    #f0b429 73%,
+    #f0b429 100%
+  );
 }
 
 /* --------------------------
-   CARD IMAGE (keep ratio consistent)
+   CARD IMAGE
 --------------------------- */
 .card-image {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 3;    /* consistent across preview & full */
+  aspect-ratio: 4 / 3;
   overflow: hidden;
 }
 
@@ -176,17 +222,6 @@ body {
 /* --------------------------
    OVERLAY & STATES
 --------------------------- */
-.animating-card {
-  transition: transform 0.55s cubic-bezier(0.4,0,0.2,1),
-              top 0.55s cubic-bezier(0.4,0,0.2,1),
-              left 0.55s cubic-bezier(0.4,0,0.2,1),
-              box-shadow 0.55s ease;
-  border-radius: 10px;
-  pointer-events: none;
-  will-change: transform, top, left;
-  opacity: 1;
-}
-
 .blurred {
   filter: blur(5px) brightness(0.7);
   transition: filter 0.3s ease;
@@ -195,45 +230,21 @@ body {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0);
-  z-index: 5;
+  background: rgba(0, 0, 0, 0);
   opacity: 0;
+  z-index: 500;
   pointer-events: none;
   transition: background 0.4s ease, opacity 0.4s ease;
 }
 
 .overlay.visible {
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   opacity: 1;
   pointer-events: auto;
 }
 
-.hidden-card {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  z-index: 0 !important;
-  transition: none !important;
-}
-
-   /* Zoom shell that we scale like a bitmap */
-.zoom-shell {
-  position: fixed;
-  /* width/height set inline from JS to the card's original size */
-  z-index: 999;
-  transform-origin: center center;
-  transition: transform 0.55s cubic-bezier(0.4,0,0.2,1),
-              top 0.55s cubic-bezier(0.4,0,0.2,1),
-              left 0.55s cubic-bezier(0.4,0,0.2,1),
-              box-shadow 0.55s ease;
-  will-change: transform, top, left;
-}
-
-.zoom-shell .card {
-  width: 100%;
-  height: 100%;
-}
-
-/* prevent hover scaling on the clone */
-.card.no-hover:hover {
-  transform: none !important;
+/* zoomed card appears above overlay */
+.card.zoomed {
+  z-index: 1001 !important;
+  pointer-events: auto;
 }
