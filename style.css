@@ -7,7 +7,7 @@ body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
   height: 100vh;
-  background-color: black; /* solid black around the playmat */
+  background-color: black;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,7 +15,7 @@ body {
 }
 
 /* --------------------------
-   BOARD (Playmat Area)
+   BOARD
 --------------------------- */
 .board {
   position: relative;
@@ -27,14 +27,11 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-
-  /* Playmat background */
   background: url("background/playmat.png") center center / cover no-repeat;
   background-color: #2b5876;
-  box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 60px rgba(0,0,0,0.8);
   backdrop-filter: blur(3px) brightness(1.05);
-  margin-top: 40px;
-  margin-bottom: 40px;
+  margin: 40px 0;
 }
 
 /* --------------------------
@@ -68,7 +65,7 @@ body {
 }
 
 /* --------------------------
-   CARD BASE (Locked Layout)
+   CARD
 --------------------------- */
 .card {
   width: 170px;
@@ -76,50 +73,14 @@ body {
   background: linear-gradient(180deg, #fdf6e3, #f4e1b2);
   border-radius: 10px;
   cursor: pointer;
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 12px rgba(0,0,0,0.3);
   position: relative;
   overflow: hidden;
   border: 3px solid #d4af37;
-  transform: scale(1);
   transition: transform 0.2s ease;
-  padding-bottom: 18px; /* room for fixed bottom bar */
-  backface-visibility: hidden; /* ✅ prevents text reflow flicker */
+  padding-bottom: 18px; /* bottom gold bar space */
+  backface-visibility: hidden;
   transform-origin: center center;
-  will-change: transform;
-}
-
-/* Top matte border overlay */
-.card::before {
-  content: "";
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 12px;
-  background: #fff8dc;
-  z-index: 0;
-  pointer-events: none;
-}
-
-/* ✅ Fixed bottom gold bar (never moves) */
-.card::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 18px;
-  background: linear-gradient(90deg, #f7d46c, #f0b429);
-  border-top: 2px solid #d4af37;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.card > * {
-  position: relative;
-  z-index: 1;
-  transform: translateZ(0); /* ✅ smooth GPU scaling */
 }
 
 .card:hover {
@@ -127,22 +88,15 @@ body {
   z-index: 10;
 }
 
-/* Holographic shimmer on hover */
-.card:hover::before {
+/* fixed bottom gold bar */
+.card::after {
   content: "";
   position: absolute;
-  top: -100%;
-  left: -100%;
-  width: 300%;
-  height: 300%;
-  background: linear-gradient(120deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: holo 1.5s linear infinite;
-  z-index: 2;
-}
-
-@keyframes holo {
-  0% { transform: translate(-100%, -100%); }
-  100% { transform: translate(100%, 100%); }
+  bottom: 0; left: 0;
+  width: 100%; height: 18px;
+  background: linear-gradient(90deg, #f7d46c, #f0b429);
+  border-top: 2px solid #d4af37;
+  z-index: 3;
 }
 
 /* --------------------------
@@ -157,46 +111,39 @@ body {
   font-size: 14px;
   color: #222;
   border-bottom: 2px solid #d4af37;
-  position: relative;
-  overflow: hidden;
-
-  /* Clean diagonal two-tone header */
-  background: linear-gradient(
-    100deg,
-    #f7d46c 0%,
-    #f7d46c 71%,
-    black 72%,
-    #f0b429 73%,
-    #f0b429 100%
-  );
+  background: linear-gradient(100deg, #f7d46c 0%, #f7d46c 71%, black 72%, #f0b429 73%, #f0b429 100%);
 }
 
 /* --------------------------
-   CARD IMAGE
+   CARD IMAGE (keep ratio consistent)
 --------------------------- */
+.card-image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;    /* consistent across preview & full */
+  overflow: hidden;
+}
+
 .card-image img {
   width: 100%;
-  height: 115px; /* slightly taller image */
+  height: 100%;
   object-fit: cover;
   display: block;
   transform: translateZ(0);
 }
 
 /* --------------------------
-   CARD INFO (Locked Height)
+   CARD INFO
 --------------------------- */
 .card-info {
   background: linear-gradient(180deg, #fff7d6 0%, #ffeab0 100%);
   padding: 10px;
   font-size: 11.5px;
-  height: 110px; /* ✅ fixed height — no resizing on hover */
+  height: 110px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  position: relative;
   overflow: hidden;
-  transform: translateZ(0);
-  backface-visibility: hidden;
 }
 
 .card-info ul {
@@ -227,13 +174,16 @@ body {
 }
 
 /* --------------------------
-   OVERLAY & EFFECTS
+   OVERLAY & STATES
 --------------------------- */
 .animating-card {
-  transition: all 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.55s cubic-bezier(0.4,0,0.2,1),
+              top 0.55s cubic-bezier(0.4,0,0.2,1),
+              left 0.55s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.55s ease;
   border-radius: 10px;
   pointer-events: none;
-  will-change: transform, top, left, width, height;
+  will-change: transform, top, left;
   opacity: 1;
 }
 
@@ -245,7 +195,7 @@ body {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0);
+  background: rgba(0,0,0,0);
   z-index: 5;
   opacity: 0;
   pointer-events: none;
@@ -253,7 +203,7 @@ body {
 }
 
 .overlay.visible {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0,0,0,0.6);
   opacity: 1;
   pointer-events: auto;
 }
@@ -263,4 +213,27 @@ body {
   opacity: 0 !important;
   z-index: 0 !important;
   transition: none !important;
+}
+
+   /* Zoom shell that we scale like a bitmap */
+.zoom-shell {
+  position: fixed;
+  /* width/height set inline from JS to the card's original size */
+  z-index: 999;
+  transform-origin: center center;
+  transition: transform 0.55s cubic-bezier(0.4,0,0.2,1),
+              top 0.55s cubic-bezier(0.4,0,0.2,1),
+              left 0.55s cubic-bezier(0.4,0,0.2,1),
+              box-shadow 0.55s ease;
+  will-change: transform, top, left;
+}
+
+.zoom-shell .card {
+  width: 100%;
+  height: 100%;
+}
+
+/* prevent hover scaling on the clone */
+.card.no-hover:hover {
+  transform: none !important;
 }

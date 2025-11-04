@@ -2,54 +2,63 @@ const cards = document.querySelectorAll(".card");
 const overlay = document.getElementById("overlay");
 const bench = document.getElementById("bench");
 
-cards.forEach(card => {
+cards.forEach((card) => {
   card.addEventListener("click", () => {
-    const rect = card.getBoundingClientRect();
+    const startRect = card.getBoundingClientRect();
+    const scale = 1.6;
 
-    const clone = card.cloneNode(true);
-    clone.classList.add("animating-card");
-    Object.assign(clone.style, {
-      position: "fixed",
-      top: `${rect.top}px`,
-      left: `${rect.left}px`,
-      width: `${rect.width}px`,
-      height: `${rect.height}px`,
-      margin: 0,
-      zIndex: 999,
-      transformOrigin: "center center",
-      opacity: "1"
+    // Create a shell that we will scale like a bitmap
+    const shell = document.createElement("div");
+    shell.className = "zoom-shell";
+    Object.assign(shell.style, {
+      top: `${startRect.top}px`,
+      left: `${startRect.left}px`,
+      width: `${startRect.width}px`,
+      height: `${startRect.height}px`,
+      boxShadow: "0 0 0 rgba(0,0,0,0)",
     });
-    document.body.appendChild(clone);
 
+    // Clone the card inside; disable hover on the clone
+    const clone = card.cloneNode(true);
+    clone.classList.add("no-hover");
+    shell.appendChild(clone);
+    document.body.appendChild(shell);
+
+    // Hide real card + show overlay
     card.classList.add("hidden-card");
     overlay.classList.add("visible");
     bench.classList.add("blurred");
 
+    // ---- EXPAND (centered) ----
     requestAnimationFrame(() => {
-      clone.style.top = "50%";
-      clone.style.left = "50%";
-      clone.style.transform = "translate(-50%, -50%) scale(1.5)";
-      clone.style.boxShadow = "0 0 40px rgba(0,0,0,0.8)";
+      shell.style.top = "50%";
+      shell.style.left = "50%";
+      shell.style.transform = `translate(-50%, -50%) scale(${scale})`;
+      shell.style.boxShadow = "0 0 40px rgba(0,0,0,0.8)";
     });
 
+    // ---- COLLAPSE ----
     overlay.onclick = () => {
-      const endRect = card.getBoundingClientRect();
-
       overlay.classList.remove("visible");
       bench.classList.remove("blurred");
 
-      clone.style.transition = "all 0.55s cubic-bezier(0.4, 0, 0.2, 1)";
-      clone.style.top = `${endRect.top}px`;
-      clone.style.left = `${endRect.left}px`;
-      clone.style.width = `${endRect.width}px`;
-      clone.style.height = `${endRect.height}px`;
-      clone.style.transform = "translate(0,0) scale(1)";
-      clone.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
+      // Move shell back to exact start box; scale back to 1
+      shell.style.top = `${startRect.top}px`;
+      shell.style.left = `${startRect.left}px`;
+      shell.style.transform = "none";
+      shell.style.boxShadow = "0 0 0 rgba(0,0,0,0)";
 
-      clone.addEventListener("transitionend", () => {
-        clone.remove();
-        card.classList.remove("hidden-card");
-      }, { once: true });
+      shell.addEventListener(
+        "transitionend",
+        () => {
+          // One paint to guarantee final alignment, then restore original
+          shell.style.transition = "none";
+          void shell.offsetHeight;
+          shell.remove();
+          card.classList.remove("hidden-card");
+        },
+        { once: true }
+      );
     };
   });
 });
